@@ -1,6 +1,7 @@
 *.iml
 .gradle
 /local.properties
+/.idea/
 /.idea/caches
 /.idea/libraries
 /.idea/modules.xml
@@ -25,3 +26,5 @@
 /app/src/androidTest
 /app/src/main/res
 /app/src/main/AndroidManifest.xml
+/app/proguard-rules.pro
+/app/.gitignore
