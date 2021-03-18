@@ -4,7 +4,6 @@ import androidx.annotation.VisibleForTesting
 import java.math.BigInteger
 import java.security.MessageDigest
 import java.security.SecureRandom
-import java.util.*
 
 class User private constructor(
     private val firstName: String,
@@ -18,7 +17,7 @@ class User private constructor(
     private val fullName: String
         get() = listOfNotNull(firstName, lastName)
             .joinToString(" ")
-            .capitalize(Locale.ROOT)
+            .capitalize()
 
     private val initials: String
         get() = listOfNotNull(firstName, lastName)
@@ -33,7 +32,7 @@ class User private constructor(
     private var _login: String? = null
     var login: String
         set(value) {
-            _login = value.toLowerCase(Locale.ROOT)
+            _login = value.toLowerCase()
         }
         get() = _login!!
 
