@@ -4,6 +4,7 @@ import androidx.annotation.VisibleForTesting
 import java.math.BigInteger
 import java.security.MessageDigest
 import java.security.SecureRandom
+import java.util.*
 
 class User private constructor(
     private val firstName: String,
@@ -17,7 +18,7 @@ class User private constructor(
     private val fullName: String
         get() = listOfNotNull(firstName, lastName)
             .joinToString(" ")
-            .capitalize()
+            .capitalize(Locale.ROOT)
 
     private val initials: String
         get() = listOfNotNull(firstName, lastName)
@@ -32,7 +33,7 @@ class User private constructor(
     private var _login: String? = null
     var login: String
         set(value) {
-            _login = value.toLowerCase()
+            _login = value.toLowerCase(Locale.ROOT)
         }
         get() = _login!!
 
@@ -64,7 +65,7 @@ class User private constructor(
         lastName: String?,
         rawPhone: String
     ) : this(firstName, lastName, rawPhone = rawPhone, meta = mapOf("auth" to "sms")) {
-        println("Secondary login constructor")
+        println("Secondary phone constructor")
         val code = generateAccessCode()
         passwordHash = encrypt(code)
         println("Phone passwordHash is $passwordHash")
