@@ -4,6 +4,8 @@ import org.junit.After
 import org.junit.Assert
 import org.junit.Test
 import ru.skillbranch.kotlinexample.extensions.dropLastUntil
+import java.math.BigInteger
+import java.security.MessageDigest
 
 /**
  * Example local unit test, which will execute on the development machine (host).
@@ -137,7 +139,6 @@ class ExampleUnitTest {
             meta: {auth=sms}
         """.trimIndent()
 
-        println("test")
         println(user.userInfo)
 
         val successResult = holder.loginUser("+7 (917) 971-11-11", user.accessCode!!)
@@ -199,5 +200,45 @@ class ExampleUnitTest {
 
         Assert.assertEquals(expectedValue0, result0)
         Assert.assertEquals(expectedValue1, result1)
+    }
+
+    @Test
+    fun import_users_csv() {
+        val email = "JohnnyBoy@gmail.com"
+        val password = "testPassword"
+        val salt = "[B@7591083d"
+        val passwordHash = salt.plus(password).md5()
+
+        val testData =
+            listOf(
+                " John Doe ;JohnDoe@unknow.com;[B@7591083d:c6adb4becdc64e92857e1e2a0fd6af84;;",
+                " Johnny Boy; $email; $salt:$passwordHash; ;"
+            )
+
+        val holder = UserHolder
+
+        val expectedInfo = """
+            firstName: Johnny
+            lastName: Boy
+            login: ${email.toLowerCase()}
+            fullName: Johnny Boy
+            initials: J B
+            email: $email
+            phone: null
+            meta: {src=csv}
+        """.trimIndent()
+
+        holder.importUsers(testData)
+
+        val resultInfo = holder.loginUser(email, password)
+
+        Assert.assertEquals(expectedInfo, resultInfo)
+    }
+
+    private fun String.md5(): String {
+        val md = MessageDigest.getInstance("MD5")
+        val digest = md.digest(toByteArray()) //16 byte
+        val hexString = BigInteger(1, digest).toString(16)
+        return hexString.padStart(32, '0')
     }
 }

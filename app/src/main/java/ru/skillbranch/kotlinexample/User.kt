@@ -1,6 +1,7 @@
 package ru.skillbranch.kotlinexample
 
 import androidx.annotation.VisibleForTesting
+import ru.skillbranch.kotlinexample.extensions.getCleanPhone
 import java.math.BigInteger
 import java.security.MessageDigest
 import java.security.SecureRandom
@@ -26,7 +27,7 @@ class User private constructor(
 
     private var phone: String? = null
         set(value) {
-            field = value?.replace("""[^+\d]""".toRegex(), "")
+            field = value?.getCleanPhone()
         }
 
     private var _login: String? = null
@@ -70,6 +71,22 @@ class User private constructor(
         println("Phone passwordHash is $passwordHash")
         accessCode = code
         sendAccessCodeToUser(rawPhone, code)
+    }
+
+    /**
+     * for import
+     */
+    constructor(
+        firstName: String,
+        lastName: String?,
+        email: String?,
+        phone: String?,
+        passwordHash: String,
+        salt: String,
+        meta: Map<String, Any>? = mapOf("src" to "csv")
+    ) : this(firstName, lastName, email, phone, meta) {
+        this.passwordHash = passwordHash
+        this.salt = salt
     }
 
     init {
@@ -134,7 +151,7 @@ class User private constructor(
         }.toString()
     }
 
-    fun sendAccessCodeToUser(phone: String, code: String) {
+    private fun sendAccessCodeToUser(phone: String, code: String) {
         println("..... sending access code: $code on $phone")
     }
 
@@ -157,6 +174,31 @@ class User private constructor(
                 )
                 else -> throw IllegalArgumentException("Email or phone must not be null or blank")
             }
+        }
+
+        fun importUser(
+            fullName: String?,
+            email: String? = null,
+            phone: String? = null,
+            salt: String? = null,
+            passwordHash: String? = null,
+            result: (User) -> Unit
+        ) {
+            if (fullName.isNullOrBlank()) throw throw IllegalArgumentException("FullName is null or empty")
+            if (salt.isNullOrBlank()) throw throw IllegalArgumentException("salt is null or empty")
+            if (passwordHash.isNullOrBlank()) throw throw IllegalArgumentException("passwordHash is null or empty")
+
+            val (firstName, lastName) = fullName.fullNameToPair()
+            result(
+                User(
+                    firstName = firstName,
+                    lastName = lastName,
+                    email = email,
+                    phone = phone,
+                    salt = salt,
+                    passwordHash = passwordHash
+                )
+            )
         }
 
         private fun String.fullNameToPair(): Pair<String, String?> =
