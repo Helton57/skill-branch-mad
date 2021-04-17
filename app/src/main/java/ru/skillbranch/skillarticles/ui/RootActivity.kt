@@ -14,7 +14,6 @@ import kotlinx.android.synthetic.main.activity_root.*
 import kotlinx.android.synthetic.main.layout_bottombar.*
 import kotlinx.android.synthetic.main.layout_submenu.*
 import ru.skillbranch.skillarticles.R
-import ru.skillbranch.skillarticles.databinding.ActivityRootBinding
 import ru.skillbranch.skillarticles.extensions.dpToIntPx
 import ru.skillbranch.skillarticles.viewmodels.ArticleState
 import ru.skillbranch.skillarticles.viewmodels.ArticleViewModel
@@ -24,12 +23,10 @@ import ru.skillbranch.skillarticles.viewmodels.ViewModelFactory
 class RootActivity : AppCompatActivity() {
 
     private lateinit var viewModel: ArticleViewModel
-    private lateinit var binding: ActivityRootBinding
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        binding = ActivityRootBinding.inflate(layoutInflater)
-        setContentView(binding.root)
+        setContentView(R.layout.activity_root)
         setupToolbar()
         setupBottomBar()
         setupSubmenu()
@@ -85,11 +82,11 @@ class RootActivity : AppCompatActivity() {
     }
 
     private fun setupToolbar() {
-        setSupportActionBar(binding.toolbar)
+        setSupportActionBar(toolbar)
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
 
-        val logo = if (binding.toolbar.childCount > 2)
-            binding.toolbar.getChildAt(2) as ImageView
+        val logo = if (toolbar.childCount > 2)
+            toolbar.getChildAt(2) as ImageView
         else
             null
         logo?.scaleType = ImageView.ScaleType.CENTER_CROP
@@ -108,7 +105,6 @@ class RootActivity : AppCompatActivity() {
 
     private fun renderUi(data: ArticleState) {
         //bind submenu state
-        binding.bottombar.rootView
         btn_settings.isChecked = data.isShowMenu
         if (data.isShowMenu) {
             submenu.open()
