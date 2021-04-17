@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name">Skill Articles</string>
+    <string name="loading_text">loading…</string>
+    <string name="dark_mode_text">Темный режим</string>
+</resources>
