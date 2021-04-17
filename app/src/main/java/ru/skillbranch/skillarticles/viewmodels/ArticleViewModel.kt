@@ -116,14 +116,6 @@ class ArticleViewModel(private val articleId: String) :
         notify(Notify.ErrorMessage(msg, "OK", null))
     }
 
-    fun handleSearchQuery(query: String?) {
-        updateState { it.copy(searchQuery = query) }
-    }
-
-    fun handleIsSearch(isSearch: Boolean) {
-        updateState { it.copy(isSearch = isSearch) }
-    }
-
     override fun handleToggleMenu() {
         updateState { it.copy(isShowMenu = !it.isShowMenu) }
     }
@@ -135,6 +127,8 @@ class ArticleViewModel(private val articleId: String) :
     override fun handleSearch(query: String?) {
         updateState { it.copy(searchQuery = query) }
     }
+
+    fun getSearchQuery(): CharSequence = state.value?.searchQuery ?: ""
 }
 
 data class ArticleState(

@@ -1,9 +1,12 @@
 package ru.skillbranch.skillarticles.ui
 
 import android.os.Bundle
+import android.view.Menu
 import android.widget.ImageView
+import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.app.AppCompatDelegate
+import androidx.appcompat.widget.SearchView
 import androidx.appcompat.widget.Toolbar
 import androidx.lifecycle.ViewModelProviders
 import com.google.android.material.snackbar.Snackbar
@@ -35,7 +38,6 @@ class RootActivity : AppCompatActivity() {
         viewModel = ViewModelProviders.of(this, vmFactory).get(ArticleViewModel::class.java)
         viewModel.observeState(this) {
             renderUi(it)
-            setupToolbar()
         }
 
         viewModel.observeNotifications(this) {
@@ -43,9 +45,49 @@ class RootActivity : AppCompatActivity() {
         }
     }
 
+    override fun onCreateOptionsMenu(menu: Menu?): Boolean {
+        menuInflater.inflate(R.menu.menu_search, menu)
+        val searchItem = menu?.findItem(R.id.action_search)
+        val searchView = searchItem?.actionView as SearchView
+        searchView.apply {
+
+            val query = viewModel.getSearchQuery()
+            if (query.isNotBlank()) {
+                onActionViewExpanded()
+                setQuery(query, true)
+            }
+            queryHint = resources.getString(R.string.search)
+            setColorsForSearchView(this)
+
+            setOnCloseListener {
+                viewModel.handleSearchMode(isSearch = false)
+                false
+            }
+
+            setOnSearchClickListener {
+                viewModel.handleSearchMode(isSearch = true)
+            }
+
+            setOnQueryTextListener(object : SearchView.OnQueryTextListener {
+                override fun onQueryTextSubmit(query: String?): Boolean {
+                    viewModel.handleSearch(query ?: "")
+                    return true
+                }
+
+                override fun onQueryTextChange(newText: String?): Boolean {
+                    viewModel.handleSearch(newText ?: "")
+                    return true
+                }
+            })
+        }
+
+        return super.onCreateOptionsMenu(menu)
+    }
+
     private fun setupToolbar() {
         setSupportActionBar(binding.toolbar)
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
+
         val logo = if (binding.toolbar.childCount > 2)
             binding.toolbar.getChildAt(2) as ImageView
         else
@@ -57,6 +99,10 @@ class RootActivity : AppCompatActivity() {
             it.height = dpToIntPx(40)
             it.marginEnd = dpToIntPx(16)
             logo.layoutParams = it
+        }
+
+        toolbar.setNavigationOnClickListener {
+            // Handle navigation icon press
         }
     }
 
@@ -143,5 +189,13 @@ class RootActivity : AppCompatActivity() {
         btn_text_up.setOnClickListener { viewModel.handleUpText() }
         btn_text_down.setOnClickListener { viewModel.handleDownText() }
         switch_mode.setOnClickListener { viewModel.handleNightMode() }
+    }
+
+    private fun setColorsForSearchView(searchView: SearchView) {
+        searchView.background = resources.getDrawable(R.color.color_article_bar, theme)
+        (searchView.findViewById(R.id.search_src_text) as? TextView)?.let {
+            it.setTextColor(resources.getColor(R.color.color_on_article_bar, theme))
+            it.setHintTextColor(resources.getColor(R.color.color_gray, theme))
+        }
     }
 }
