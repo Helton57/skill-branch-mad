@@ -1,2 +1,2 @@
 include ':app'
-rootProject.name = "skillbranchM"
+rootProject.name='Skill Articles'

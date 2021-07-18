@@ -9,7 +9,7 @@ interface IArticleViewModel {
      * Получение полной информации о статье из сети
      * (или базы данных если она сохранена, наличие статьи в базе не надо реализовывать в данном уроке)
      */
-    fun getArticleContent(): LiveData<List<Any>?>
+    fun getArticleContent(): LiveData<List<String>?>
 
     /**
      * Получение краткой информации о статье из базы данных
@@ -25,6 +25,7 @@ interface IArticleViewModel {
      * Получение настроек приложения
      */
     fun handleNightMode()
+
 
     /**
      * Обработка нажатия на btn_text_up (увеличение шрифта текста)
@@ -79,4 +80,14 @@ interface IArticleViewModel {
      * searchView при изменении конфигурации (пересоздании активити)
      */
     fun handleSearch(query: String?)
+
+    /**
+     * переместиться к предидущему совпадению поиска
+     */
+    fun handleUpResult()
+
+    /**
+     * переместиться к следующему совпадению поиска
+     */
+    fun handleDownResult()
 }
