@@ -139,9 +139,6 @@ class ArticleViewModel(private val articleId: String, savedStateHandle: SavedSta
     override fun handleSearch(query: String?) {
         query ?: return
 
-        val currentContent = currentState.content.firstOrNull()
-        val first = currentContent.indexesOf(query)
-
         val result = currentState.content.firstOrNull().indexesOf(query)
             .map { it to it + query.length }
 

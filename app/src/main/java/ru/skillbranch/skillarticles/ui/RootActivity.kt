@@ -33,7 +33,7 @@ import ru.skillbranch.skillarticles.viewmodels.*
 class RootActivity : AppCompatActivity(), IArticleView {
     @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
 
-    val viewModelFactory: ViewModelProvider.Factory = ViewModelFactory(this, "0")
+    var viewModelFactory: ViewModelProvider.Factory = ViewModelFactory(this, "0")
     private val viewModel: ArticleViewModel by viewModels { viewModelFactory }
 
     private val vb: ActivityRootBinding by viewBinding(ActivityRootBinding::inflate)
