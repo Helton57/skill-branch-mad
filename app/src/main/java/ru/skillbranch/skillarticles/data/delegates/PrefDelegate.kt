@@ -1,4 +1,4 @@
-package ru.skillbranch.skillarticles.ui.delegates
+package ru.skillbranch.skillarticles.data.delegates
 
 import androidx.datastore.preferences.core.*
 import kotlinx.coroutines.Dispatchers
