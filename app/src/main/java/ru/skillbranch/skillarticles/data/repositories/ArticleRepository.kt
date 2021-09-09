@@ -14,7 +14,8 @@ interface IArticleRepository {
 
 class ArticleRepository(
     private val local: LocalDataHolder = LocalDataHolder,
-    private val network: NetworkDataHolder = NetworkDataHolder
+    private val network: NetworkDataHolder = NetworkDataHolder,
+    private val prefs: PrefManager = PrefManager()
 ) : IArticleRepository {
 
     override fun loadArticleContent(articleId: String): LiveData<List<String>?> {
@@ -29,9 +30,10 @@ class ArticleRepository(
         return local.findArticlePersonalInfo(articleId) //1s delay from db
     }
 
-    override fun getAppSettings(): LiveData<AppSettings> = local.getAppSettings() //from preferences
+    override fun getAppSettings(): LiveData<AppSettings> = prefs.settings //from preferences
     override fun updateSettings(appSettings: AppSettings) {
-        local.updateAppSettings(appSettings)
+        prefs.isBigText = appSettings.isBigText
+        prefs.isDarkMode = appSettings.isDarkMode
     }
 
     override fun updateArticlePersonalInfo(info: ArticlePersonalInfo) {

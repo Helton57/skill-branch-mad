@@ -32,14 +32,22 @@ class PrefManager(context: Context = App.applicationContext()) {
     var isBigText by PrefDelegate(false)
     var isDarkMode by PrefDelegate(false)
 
+    var testInt by PrefDelegate(Int.MAX_VALUE)
+    var testLong by PrefDelegate(Long.MAX_VALUE)
+    var testDouble by PrefDelegate(Double.MAX_VALUE)
+    var testFloat by PrefDelegate(Float.MAX_VALUE)
+    var testString by PrefDelegate("test")
+    var testBoolean by PrefDelegate(false)
+
 
     val settings: LiveData<AppSettings>
         get() {
-            val isBig = dataStore.data.map { it[booleanPreferencesKey(this::isBigText.name)] }
-            val isDark = dataStore.data.map { it[booleanPreferencesKey(this::isDarkMode.name)] }
+            val isBig =
+                dataStore.data.map { it[booleanPreferencesKey(this::isBigText.name)] ?: false }
+            val isDark =
+                dataStore.data.map { it[booleanPreferencesKey(this::isDarkMode.name)] ?: false }
 
-            // FIXME: 18.07.2021 ??? AppSettings(dark!!, big!!)
-            return isDark.zip(isBig) { dark, big -> AppSettings(dark!!, big!!) }
+            return isDark.zip(isBig) { dark, big -> AppSettings(dark, big) }
                 .onEach { Log.e("PrefManager", "settings $it") }
                 .distinctUntilChanged()
                 .asLiveData()

@@ -14,8 +14,6 @@ object LocalDataHolder {
     val articleData = MutableLiveData<ArticleData?>(null)
     @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
     val articleInfo = MutableLiveData<ArticlePersonalInfo?>(null)
-    @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
-    val settings = MutableLiveData(AppSettings())
 
     fun findArticle(articleId: String): LiveData<ArticleData?> {
         GlobalScope.launch {
@@ -43,11 +41,6 @@ object LocalDataHolder {
             }
         }
         return articleInfo
-    }
-
-    fun getAppSettings() = settings
-    fun updateAppSettings(appSettings: AppSettings) {
-        settings.value = appSettings
     }
 
     fun updateArticlePersonalInfo(info: ArticlePersonalInfo) {
