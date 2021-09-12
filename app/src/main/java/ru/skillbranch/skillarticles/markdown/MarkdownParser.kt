@@ -11,10 +11,17 @@ object MarkdownParser {
     private const val HEADER_GROUP = "(^#{1,6} .+$)"
     private const val QUOTE_GROUP = "(^> .+$)"
     private const val ITALIC_GROUP = "((?<!\\*)\\*[^*].*?[^*]?\\*(?!\\*)|(?<!_)_[^_].*?[^_]?_(?!_))"
+    private const val BOLD_GROUP =
+        "((?<!\\*)\\*{2}[^*].*?[^*]?\\*{2}(?!\\*)|(?<!_)_{2}[^_].*?[^_]?_{2}(?!_))"
+    private const val STRIKE_GROUP = "((?<!~)~{2}[^~].*?[^~]?~{2}(?!~))"
+    private const val RULE_GROUP = "(^[-_*]{3}$)"
+    private const val INLINE_GROUP = "((?<!`)`[^`\\s].*?[^`\\s]?`(?!`))"
+    private const val MULTILINE_GROUP = "((?<!`)`{3}[^`\\s][.\\w\\s\\d]*[^`\\s]`{3}(?!`))"
+
 
     //result regex
     private const val MARKDOWN_GROUPS = "$UNORDERED_LIST_ITEM_GROUP|$HEADER_GROUP|$QUOTE_GROUP|" +
-            "$ITALIC_GROUP"
+            "$ITALIC_GROUP|$BOLD_GROUP|$STRIKE_GROUP|$RULE_GROUP|$INLINE_GROUP|$MULTILINE_GROUP"
 
     private val elementsPattern by lazy { Pattern.compile(MARKDOWN_GROUPS, Pattern.MULTILINE) }
 
@@ -54,7 +61,7 @@ object MarkdownParser {
             val text: CharSequence
 
             //group range for iterate by groups
-            val groups: IntRange = 1..4
+            val groups: IntRange = 1..9
             var group = -1
 
 
@@ -86,7 +93,7 @@ object MarkdownParser {
                     val reg = "^#{1,6}".toRegex().find(string.subSequence(startIndex, endIndex))
                     val level = reg!!.value.length
 
-                    // test without "{#} "
+                    // text without "{#} "
                     text = string.subSequence(startIndex.plus(level.inc()), endIndex)
 
                     val element = Element.Header(level, text)
@@ -95,7 +102,7 @@ object MarkdownParser {
                 }
                 //QUOTE
                 3 -> {
-                    // test without "> "
+                    // text without "> "
                     text = string.subSequence(startIndex.plus(2), endIndex)
                     val subElements = findElements(text)
                     val element = Element.Quote(text, subElements)
@@ -104,10 +111,53 @@ object MarkdownParser {
                 }
                 //ITALIC
                 4 -> {
-                    // test without "*{}*"
+                    // text without "*{}*" or "_{}_"
                     text = string.subSequence(startIndex.inc(), endIndex.dec())
                     val subElements = findElements(text)
                     val element = Element.Italic(text, subElements)
+                    parents.add(element)
+                    lastStartIndex = endIndex
+                }
+                //BOLD
+                5 -> {
+                    // text without "**{}**" or "__{}__"
+                    text = string.subSequence(startIndex.plus(2), endIndex.plus(-2))
+                    val subElements = findElements(text)
+                    val element = Element.Bold(text, subElements)
+                    parents.add(element)
+                    lastStartIndex = endIndex
+                }
+                //STRIKE
+                6 -> {
+                    // text without "~~{}~~"
+                    text = string.subSequence(startIndex.plus(2), endIndex.plus(-2))
+                    val subElements = findElements(text)
+                    val element = Element.Strike(text, subElements)
+                    parents.add(element)
+                    lastStartIndex = endIndex
+                }
+                //RULE
+                7 -> {
+                    // text without "***" or "---" or "___" insert empty character
+                    val element = Element.Rule()
+                    parents.add(element)
+                    lastStartIndex = endIndex
+                }
+                //INLINE CODE
+                8 -> {
+                    // text without "`{}`"
+                    text = string.subSequence(startIndex.inc(), endIndex.dec())
+                    val subElements = findElements(text)
+                    val element = Element.InlineCode(text, subElements)
+                    parents.add(element)
+                    lastStartIndex = endIndex
+                }
+                //MULTILINE CODE
+                9 -> {
+                    // text without "```{}```"
+                    text = string.subSequence(startIndex.plus(3), endIndex.plus(-3))
+                    val subElements = findElements(text)
+                    val element = Element.BlockCode(text, subElements)
                     parents.add(element)
                     lastStartIndex = endIndex
                 }
@@ -164,6 +214,7 @@ sealed class Element {
         override val elements: List<Element> = emptyList()
     ) : Element()
 
+    // FIXME: 12.09.2021 учитывать default text for clear
     data class Rule(
         override val text: CharSequence = " ", //for insert span
         override val elements: List<Element> = emptyList()
@@ -187,10 +238,7 @@ sealed class Element {
     ) : Element()
 
     data class BlockCode(
-        val type: Type = Type.MIDDLE,
         override val text: CharSequence,
         override val elements: List<Element> = emptyList()
-    ) : Element() {
-        enum class Type { START, END, MIDDLE, SINGLE }
-    }
+    ) : Element()
 }
