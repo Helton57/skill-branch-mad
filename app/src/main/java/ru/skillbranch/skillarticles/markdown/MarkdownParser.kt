@@ -5,6 +5,16 @@ import java.util.regex.Pattern
 object MarkdownParser {
 
     private val LINE_SEPARATOR = System.getProperty("line.separator") ?: "\n"
+    private const val LINK_JUST_TITLE = "((?<!\\[)\\[.+\\](?!\\]))"
+    private const val LINK_JUST_LINK = "((?<!\\()\\(.+\\)(?!\\)))"
+    private const val IMAGE_JUST_ALT = "(!(?<!\\[)\\[.*](?!]))"
+    private const val IMAGE_URL_WITH_TITLE = "((?<!\\()\\(.*\\)(?!\\)))"
+    private const val IMAGE_JUST_TITLE = "(\".*\")"
+
+    //very long solution
+//    private const val LINK_JUST_TITLE = "((?<!\\[)\\[[^\\[\\]].+[^\\[\\]]\\](?!\\]))"
+//    private const val LINK_JUST_LINK = "((?<!\\()\\([^\\(\\)].+[^\\(\\)]\\)(?!\\)))"
+
 
     //group regex
     private const val UNORDERED_LIST_ITEM_GROUP = "(^[*+-] .+$)"
@@ -17,11 +27,15 @@ object MarkdownParser {
     private const val RULE_GROUP = "(^[-_*]{3}$)"
     private const val INLINE_GROUP = "((?<!`)`[^`\\s].*?[^`\\s]?`(?!`))"
     private const val MULTILINE_GROUP = "((?<!`)`{3}[^`\\s][.\\w\\s\\d]*[^`\\s]`{3}(?!`))"
+    private const val ORDERED_LIST_ITEM_GROUP = "(^\\d+\\. .+\$)"
+    private const val LINK_GROUP = "$LINK_JUST_TITLE$LINK_JUST_LINK"
+    private const val IMAGE_GROUP = "(!(?<!\\[)\\[.*](?!])(?<!\\()\\(.*\\)(?!\\)))"
 
 
     //result regex
     private const val MARKDOWN_GROUPS = "$UNORDERED_LIST_ITEM_GROUP|$HEADER_GROUP|$QUOTE_GROUP|" +
-            "$ITALIC_GROUP|$BOLD_GROUP|$STRIKE_GROUP|$RULE_GROUP|$INLINE_GROUP|$MULTILINE_GROUP"
+            "$ITALIC_GROUP|$BOLD_GROUP|$STRIKE_GROUP|$RULE_GROUP|$INLINE_GROUP|$MULTILINE_GROUP|" +
+            "$ORDERED_LIST_ITEM_GROUP|$LINK_GROUP"
 
     private val elementsPattern by lazy { Pattern.compile(MARKDOWN_GROUPS, Pattern.MULTILINE) }
 
@@ -61,7 +75,7 @@ object MarkdownParser {
             val text: CharSequence
 
             //group range for iterate by groups
-            val groups: IntRange = 1..9
+            val groups: IntRange = 1..11
             var group = -1
 
 
@@ -161,6 +175,68 @@ object MarkdownParser {
                     parents.add(element)
                     lastStartIndex = endIndex
                 }
+                //ORDERED LIST ITEM
+                10 -> {
+                    val reg = "^\\d+\\.".toRegex().find(string.subSequence(startIndex, endIndex))
+                    val order = reg!!.value.length
+                    // text without "1. {}"
+                    text = string.subSequence(startIndex.plus(order + 1), endIndex)
+                    val subElements = findElements(text)
+                    val element = Element.OrderedListItem(order = reg.value, text, subElements)
+                    parents.add(element)
+                    lastStartIndex = endIndex
+                }
+                //LINK
+                11 -> {
+                    val regTitle = LINK_JUST_TITLE.toRegex()
+                        .find(string.subSequence(startIndex, endIndex))
+                    val regLink = LINK_JUST_LINK.toRegex()
+                        .find(string.subSequence(startIndex, endIndex))
+                    // title -> text without "[{}]"
+                    text = regTitle!!.value.subSequence(1, regTitle.value.length.plus(-1))
+                    // link -> text without "({})"
+                    val link = regLink!!.value.subSequence(1, regLink.value.length.plus(-1))
+                    val subElements = findElements(text)
+                    val element = Element.Link(link = link.toString(), text, subElements)
+                    parents.add(element)
+                    lastStartIndex = endIndex
+                }
+//                //IMAGE
+//                12 -> {
+//                    val regAlt = IMAGE_JUST_ALT.toRegex()
+//                        .find(string.subSequence(startIndex, endIndex))
+//                    val regUrlWithTitle = IMAGE_URL_WITH_TITLE.toRegex()
+//                        .find(string.subSequence(startIndex, endIndex))
+//                    val regTitle = IMAGE_JUST_TITLE.toRegex()
+//                        .find(string.subSequence(startIndex, endIndex))
+//                    // alt -> text without "![{}]"
+//                    val alt = regAlt?.value?.subSequence(1, regAlt.value.length.plus(-1))
+//                    // url with title -> text without "({})"
+//                    val urlWithTitle = regUrlWithTitle!!.value.subSequence(
+//                        1,
+//                        regUrlWithTitle.value.length.plus(-1)
+//                    )
+//                    text = regTitle?.value?.subSequence(1, regTitle.value.length.plus(-2)) ?: ""
+//
+//                    val element = if (text.isBlank()) {
+//                        Element.Image(
+//                            url = urlWithTitle.toString(),
+//                            alt.toString(),
+//                            text,
+//                            emptyList()
+//                        )
+//                    } else {
+//                        val subElements = findElements(text)
+//                        Element.Image(
+//                            url = urlWithTitle.subSequence(1, text.length.plus(-1)).toString(),
+//                            alt.toString(),
+//                            text,
+//                            subElements
+//                        )
+//                    }
+//                    parents.add(element)
+//                    lastStartIndex = endIndex
+//                }
             }
         }
 
@@ -241,4 +317,11 @@ sealed class Element {
         override val text: CharSequence,
         override val elements: List<Element> = emptyList()
     ) : Element()
+
+//    data class Image(
+//        val url: String,
+//        val alt: String = "",
+//        override val text: CharSequence,
+//        override val elements: List<Element>
+//    ) : Element()
 }
