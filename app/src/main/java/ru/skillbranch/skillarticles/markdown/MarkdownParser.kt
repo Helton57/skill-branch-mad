@@ -35,7 +35,7 @@ object MarkdownParser {
     //result regex
     private const val MARKDOWN_GROUPS = "$UNORDERED_LIST_ITEM_GROUP|$HEADER_GROUP|$QUOTE_GROUP|" +
             "$ITALIC_GROUP|$BOLD_GROUP|$STRIKE_GROUP|$RULE_GROUP|$INLINE_GROUP|$MULTILINE_GROUP|" +
-            "$ORDERED_LIST_ITEM_GROUP|$LINK_GROUP"
+            "$ORDERED_LIST_ITEM_GROUP|$IMAGE_GROUP|$LINK_GROUP"
 
     private val elementsPattern by lazy { Pattern.compile(MARKDOWN_GROUPS, Pattern.MULTILINE) }
 
@@ -75,7 +75,7 @@ object MarkdownParser {
             val text: CharSequence
 
             //group range for iterate by groups
-            val groups: IntRange = 1..11
+            val groups: IntRange = 1..12
             var group = -1
 
 
@@ -186,8 +186,49 @@ object MarkdownParser {
                     parents.add(element)
                     lastStartIndex = endIndex
                 }
-                //LINK
+                //IMAGE
                 11 -> {
+                    val regAlt = IMAGE_JUST_ALT.toRegex()
+                        .find(string.subSequence(startIndex, endIndex))
+                    val regUrlWithTitle = IMAGE_URL_WITH_TITLE.toRegex()
+                        .find(string.subSequence(startIndex, endIndex))
+                    val regTitle = IMAGE_JUST_TITLE.toRegex()
+                        .find(string.subSequence(startIndex, endIndex))
+                    // alt -> text without "![{}]"
+                    val alt = regAlt?.value?.subSequence(2, regAlt.value.length.plus(-1))
+                    // url with title -> text without "({})"
+                    val urlWithTitle = regUrlWithTitle!!.value.subSequence(
+                        1,
+                        regUrlWithTitle.value.length.plus(-1)
+                    )
+                    val title =
+                        regTitle?.value?.subSequence(1, regTitle.value.length.plus(-1)) ?: ""
+                    text = title
+
+                    val element = if (text.isBlank()) {
+                        Element.Image(
+                            url = urlWithTitle.toString(),
+                            if (alt.isNullOrBlank()) null else alt.toString(),
+                            text,
+                            emptyList()
+                        )
+                    } else {
+                        val subElements = findElements(text)
+                        Element.Image(
+                            url = urlWithTitle.subSequence(
+                                0,
+                                urlWithTitle.length.plus(-text.length).plus(-3)
+                            ).toString(),
+                            if (alt.isNullOrBlank()) null else alt.toString(),
+                            text,
+                            subElements
+                        )
+                    }
+                    parents.add(element)
+                    lastStartIndex = endIndex
+                }
+                //LINK
+                12 -> {
                     val regTitle = LINK_JUST_TITLE.toRegex()
                         .find(string.subSequence(startIndex, endIndex))
                     val regLink = LINK_JUST_LINK.toRegex()
@@ -201,42 +242,6 @@ object MarkdownParser {
                     parents.add(element)
                     lastStartIndex = endIndex
                 }
-//                //IMAGE
-//                12 -> {
-//                    val regAlt = IMAGE_JUST_ALT.toRegex()
-//                        .find(string.subSequence(startIndex, endIndex))
-//                    val regUrlWithTitle = IMAGE_URL_WITH_TITLE.toRegex()
-//                        .find(string.subSequence(startIndex, endIndex))
-//                    val regTitle = IMAGE_JUST_TITLE.toRegex()
-//                        .find(string.subSequence(startIndex, endIndex))
-//                    // alt -> text without "![{}]"
-//                    val alt = regAlt?.value?.subSequence(1, regAlt.value.length.plus(-1))
-//                    // url with title -> text without "({})"
-//                    val urlWithTitle = regUrlWithTitle!!.value.subSequence(
-//                        1,
-//                        regUrlWithTitle.value.length.plus(-1)
-//                    )
-//                    text = regTitle?.value?.subSequence(1, regTitle.value.length.plus(-2)) ?: ""
-//
-//                    val element = if (text.isBlank()) {
-//                        Element.Image(
-//                            url = urlWithTitle.toString(),
-//                            alt.toString(),
-//                            text,
-//                            emptyList()
-//                        )
-//                    } else {
-//                        val subElements = findElements(text)
-//                        Element.Image(
-//                            url = urlWithTitle.subSequence(1, text.length.plus(-1)).toString(),
-//                            alt.toString(),
-//                            text,
-//                            subElements
-//                        )
-//                    }
-//                    parents.add(element)
-//                    lastStartIndex = endIndex
-//                }
             }
         }
 
@@ -318,10 +323,10 @@ sealed class Element {
         override val elements: List<Element> = emptyList()
     ) : Element()
 
-//    data class Image(
-//        val url: String,
-//        val alt: String = "",
-//        override val text: CharSequence,
-//        override val elements: List<Element>
-//    ) : Element()
+    data class Image(
+        val url: String,
+        val alt: String?,
+        override val text: CharSequence,
+        override val elements: List<Element> = emptyList()
+    ) : Element()
 }
