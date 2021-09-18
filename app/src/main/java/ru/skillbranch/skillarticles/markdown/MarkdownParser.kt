@@ -11,11 +11,6 @@ object MarkdownParser {
     private const val IMAGE_URL_WITH_TITLE = "((?<!\\()\\(.*\\)(?!\\)))"
     private const val IMAGE_JUST_TITLE = "(\".*\")"
 
-    //very long solution
-//    private const val LINK_JUST_TITLE = "((?<!\\[)\\[[^\\[\\]].+[^\\[\\]]\\](?!\\]))"
-//    private const val LINK_JUST_LINK = "((?<!\\()\\([^\\(\\)].+[^\\(\\)]\\)(?!\\)))"
-
-
     //group regex
     private const val UNORDERED_LIST_ITEM_GROUP = "(^[*+-] .+$)"
     private const val HEADER_GROUP = "(^#{1,6} .+$)"
@@ -52,8 +47,27 @@ object MarkdownParser {
      * clear markdown text to string without markdown characters
      */
     fun clear(string: String): String? {
-        // TODO: 12.09.2021 реализовать это
-        return null
+        val elements = mutableListOf<Element>()
+        elements.addAll(findElements(string))
+
+        return if (elements.isEmpty()) null
+        else {
+            elements.fold("") { acc: String, element: Element ->
+                acc.plus(element.spreadText())
+            }
+        }
+    }
+
+    // проходится по списку распарсенных элементов и возвращает все тексты максимальной вложенности
+    // (максимально очищенные)
+    private fun Element.spreadText(): String {
+        return if (this.elements.isEmpty()) {
+            this.text.toString()
+        } else {
+            var resultText = ""
+            this.elements.forEach { element -> resultText += element.spreadText() }
+            resultText
+        }
     }
 
     //парсит строку и возвращает лист элементов
